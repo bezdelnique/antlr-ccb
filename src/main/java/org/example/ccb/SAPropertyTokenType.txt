@@ -1,0 +1,49 @@
+package antlr.org.example;
+
+
+IF[SA[EO:EO-TYPE]='APH']THEN['TRUE']ELSE['FALSE']
+
+
+/**
+ *
+ * @author faust
+ */
+public enum SAPropertyTokenType {
+
+    IF_THEN_ELSE("((IF\\[(?:\\S)+\\]THEN\\[(?:\\S)+\\]ELSE\\[(?:\\S)+\\]))", StringTokenValueFactory.getInstance())
+  , ERROR("(ERROR\\[(?:\\S)+\\])", StringTokenValueFactory.getInstance())
+  // Не разделяем тип объекта в выражении. В контексте исполнения всегда используется соответствующий вычислитель (evaluator).
+  , CONTEXT_OBJECT_PROPERTY("((SA\\[)+([^\\]])+\\:([^\\]])+(\\])+)", StringTokenValueFactory.getInstance())
+  , MULTIDIMENSIONAL_BILL_FACTOR("((MDBF\\[)+([^\\]])+(\\])+)", StringTokenValueFactory.getInstance())
+  , SQI_VALUE("((SQI\\[)+([^\\]])+(\\])+)", StringTokenValueFactory.getInstance())
+  , CHARACTERISTIC_DATA("((CHAR_DATA\\[)+([^\\]])+(\\])+)", StringTokenValueFactory.getInstance())
+  , INTERVAL_DATA("((INTV\\[)+([^\\]])+(\\])+)", StringTokenValueFactory.getInstance())
+  , IN_OP("(((IN)|(BETW))+)(\\s*)(\\()+([^\\)]+)(\\){1})",StringTokenValueFactory.getInstance())
+  , IDENT("\\%\\d+", StringTokenValueFactory.getInstance())
+  , COMPARE_OP("(>=|<=|>|<|=|ALG|<>)",StringTokenValueFactory.getInstance())
+  , STRING_CONSTANT("('[A-Z_\\-0-9]*')", StringTokenValueFactory.getInstance())
+  , NUMBER("[^\\{}']{0}[0-9]+(?:\\.[0-9]*[0-9])?", BigDecimalTokenValueFactory.getInstance())
+  , MATH_BINARY_OP("[*/+\\-]|(MIN|MAX)",StringTokenValueFactory.getInstance())
+  , BOOLEAN_BINARY_OP("[\\|]{2}|[&]{2}",StringTokenValueFactory.getInstance())
+  , UNARY_OP("[!]",StringTokenValueFactory.getInstance())
+  , WHITESPACE("\\s+",StringTokenValueFactory.getInstance())
+  , LEFT_PARENT("\\(",StringTokenValueFactory.getInstance())
+  , RIGHT_PARENT("\\)",StringTokenValueFactory.getInstance())
+  , VALUE(null,null);
+  
+    private String pattern;
+    private ITokenValueFactory tokenValueFactory;
+
+    SAPropertyTokenType(String pattern, ITokenValueFactory tokenValueFactory) {
+        this.pattern = pattern;
+        this.tokenValueFactory = tokenValueFactory;
+    }
+
+    public String getPattern() {
+        return this.pattern;
+    }
+
+    public ITokenValue createTokenValue(String valueHolder){
+        return tokenValueFactory.createTokenValue(valueHolder);
+    }
+}
