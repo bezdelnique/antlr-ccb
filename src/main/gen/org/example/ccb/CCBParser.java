@@ -20,8 +20,8 @@ public class CCBParser extends Parser {
 		new PredictionContextCache();
 	public static final int
 		EQ=1, NEQ=2, NOT=3, OPAR=4, CPAR=5, OBRACE=6, CBRACE=7, OSRACE=8, CSRACE=9, 
-		TRUE=10, FALSE=11, NIL=12, IF=13, THEN=14, ELSE=15, ID=16, INT=17, FLOAT=18, 
-		STRING=19, COMMENT=20, SPACE=21, OTHER=22;
+		TRUE=10, FALSE=11, NIL=12, IF=13, THEN=14, ELSE=15, CO=16, MDBF=17, INT=18, 
+		FLOAT=19, STRING=20, COMMENT=21, SPACE=22, OTHER=23;
 	public static final int
 		RULE_parse = 0, RULE_block = 1, RULE_stat = 2, RULE_if_stat = 3, RULE_condition_block = 4, 
 		RULE_stat_block = 5, RULE_expr = 6, RULE_atom = 7;
@@ -43,8 +43,8 @@ public class CCBParser extends Parser {
 	private static String[] makeSymbolicNames() {
 		return new String[] {
 			null, "EQ", "NEQ", "NOT", "OPAR", "CPAR", "OBRACE", "CBRACE", "OSRACE", 
-			"CSRACE", "TRUE", "FALSE", "NIL", "IF", "THEN", "ELSE", "ID", "INT", 
-			"FLOAT", "STRING", "COMMENT", "SPACE", "OTHER"
+			"CSRACE", "TRUE", "FALSE", "NIL", "IF", "THEN", "ELSE", "CO", "MDBF", 
+			"INT", "FLOAT", "STRING", "COMMENT", "SPACE", "OTHER"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -406,10 +406,10 @@ public class CCBParser extends Parser {
 				match(CSRACE);
 				}
 				break;
-			case OPAR:
 			case TRUE:
 			case FALSE:
-			case ID:
+			case CO:
+			case MDBF:
 			case INT:
 			case FLOAT:
 			case STRING:
@@ -572,24 +572,20 @@ public class CCBParser extends Parser {
 			super.copyFrom(ctx);
 		}
 	}
-	public static class ParExprContext extends AtomContext {
-		public TerminalNode OPAR() { return getToken(CCBParser.OPAR, 0); }
-		public ExprContext expr() {
-			return getRuleContext(ExprContext.class,0);
-		}
-		public TerminalNode CPAR() { return getToken(CCBParser.CPAR, 0); }
-		public ParExprContext(AtomContext ctx) { copyFrom(ctx); }
+	public static class ContextObjectAtomContext extends AtomContext {
+		public TerminalNode CO() { return getToken(CCBParser.CO, 0); }
+		public ContextObjectAtomContext(AtomContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterParExpr(this);
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterContextObjectAtom(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitParExpr(this);
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitContextObjectAtom(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitParExpr(this);
+			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitContextObjectAtom(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -611,40 +607,6 @@ public class CCBParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
-	public static class IdAtomContext extends AtomContext {
-		public TerminalNode ID() { return getToken(CCBParser.ID, 0); }
-		public IdAtomContext(AtomContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterIdAtom(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitIdAtom(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitIdAtom(this);
-			else return visitor.visitChildren(this);
-		}
-	}
-	public static class FloatAtomContext extends AtomContext {
-		public TerminalNode FLOAT() { return getToken(CCBParser.FLOAT, 0); }
-		public FloatAtomContext(AtomContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterFloatAtom(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitFloatAtom(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitFloatAtom(this);
-			else return visitor.visitChildren(this);
-		}
-	}
 	public static class StringAtomContext extends AtomContext {
 		public TerminalNode STRING() { return getToken(CCBParser.STRING, 0); }
 		public StringAtomContext(AtomContext ctx) { copyFrom(ctx); }
@@ -662,20 +624,38 @@ public class CCBParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
-	public static class IntegerAtomContext extends AtomContext {
-		public TerminalNode INT() { return getToken(CCBParser.INT, 0); }
-		public IntegerAtomContext(AtomContext ctx) { copyFrom(ctx); }
+	public static class MdbfAtomContext extends AtomContext {
+		public TerminalNode MDBF() { return getToken(CCBParser.MDBF, 0); }
+		public MdbfAtomContext(AtomContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterIntegerAtom(this);
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterMdbfAtom(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitIntegerAtom(this);
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitMdbfAtom(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitIntegerAtom(this);
+			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitMdbfAtom(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class NumberAtomContext extends AtomContext {
+		public TerminalNode INT() { return getToken(CCBParser.INT, 0); }
+		public TerminalNode FLOAT() { return getToken(CCBParser.FLOAT, 0); }
+		public NumberAtomContext(AtomContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterNumberAtom(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitNumberAtom(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitNumberAtom(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -685,43 +665,32 @@ public class CCBParser extends Parser {
 		enterRule(_localctx, 14, RULE_atom);
 		int _la;
 		try {
-			setState(65);
+			setState(61);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
-			case OPAR:
-				_localctx = new ParExprContext(_localctx);
+			case INT:
+			case FLOAT:
+				_localctx = new NumberAtomContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(56);
-				match(OPAR);
-				setState(57);
-				expr(0);
-				setState(58);
-				match(CPAR);
+				_la = _input.LA(1);
+				if ( !(_la==INT || _la==FLOAT) ) {
+				_errHandler.recoverInline(this);
 				}
-				break;
-			case INT:
-				_localctx = new IntegerAtomContext(_localctx);
-				enterOuterAlt(_localctx, 2);
-				{
-				setState(60);
-				match(INT);
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
+					consume();
 				}
-				break;
-			case FLOAT:
-				_localctx = new FloatAtomContext(_localctx);
-				enterOuterAlt(_localctx, 3);
-				{
-				setState(61);
-				match(FLOAT);
 				}
 				break;
 			case TRUE:
 			case FALSE:
 				_localctx = new BooleanAtomContext(_localctx);
-				enterOuterAlt(_localctx, 4);
+				enterOuterAlt(_localctx, 2);
 				{
-				setState(62);
+				setState(57);
 				_la = _input.LA(1);
 				if ( !(_la==TRUE || _la==FALSE) ) {
 				_errHandler.recoverInline(this);
@@ -733,19 +702,27 @@ public class CCBParser extends Parser {
 				}
 				}
 				break;
-			case ID:
-				_localctx = new IdAtomContext(_localctx);
-				enterOuterAlt(_localctx, 5);
+			case CO:
+				_localctx = new ContextObjectAtomContext(_localctx);
+				enterOuterAlt(_localctx, 3);
 				{
-				setState(63);
-				match(ID);
+				setState(58);
+				match(CO);
+				}
+				break;
+			case MDBF:
+				_localctx = new MdbfAtomContext(_localctx);
+				enterOuterAlt(_localctx, 4);
+				{
+				setState(59);
+				match(MDBF);
 				}
 				break;
 			case STRING:
 				_localctx = new StringAtomContext(_localctx);
-				enterOuterAlt(_localctx, 6);
+				enterOuterAlt(_localctx, 5);
 				{
-				setState(64);
+				setState(60);
 				match(STRING);
 				}
 				break;
@@ -780,7 +757,7 @@ public class CCBParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u0016D\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001\u0017@\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0002"+
 		"\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007\u0001"+
 		"\u0000\u0001\u0000\u0001\u0001\u0005\u0001\u0014\b\u0001\n\u0001\f\u0001"+
@@ -790,36 +767,34 @@ public class CCBParser extends Parser {
 		"\u0001\u0005\u0001\u0005\u0003\u0005,\b\u0005\u0001\u0006\u0001\u0006"+
 		"\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0005\u00064\b\u0006"+
 		"\n\u0006\f\u00067\t\u0006\u0001\u0007\u0001\u0007\u0001\u0007\u0001\u0007"+
-		"\u0001\u0007\u0001\u0007\u0001\u0007\u0001\u0007\u0001\u0007\u0003\u0007"+
-		"B\b\u0007\u0001\u0007\u0000\u0001\f\b\u0000\u0002\u0004\u0006\b\n\f\u000e"+
-		"\u0000\u0002\u0001\u0000\u0001\u0002\u0001\u0000\n\u000bC\u0000\u0010"+
-		"\u0001\u0000\u0000\u0000\u0002\u0015\u0001\u0000\u0000\u0000\u0004\u0018"+
-		"\u0001\u0000\u0000\u0000\u0006\u001a\u0001\u0000\u0000\u0000\b\"\u0001"+
-		"\u0000\u0000\u0000\n+\u0001\u0000\u0000\u0000\f-\u0001\u0000\u0000\u0000"+
-		"\u000eA\u0001\u0000\u0000\u0000\u0010\u0011\u0003\u0002\u0001\u0000\u0011"+
-		"\u0001\u0001\u0000\u0000\u0000\u0012\u0014\u0003\u0004\u0002\u0000\u0013"+
-		"\u0012\u0001\u0000\u0000\u0000\u0014\u0017\u0001\u0000\u0000\u0000\u0015"+
-		"\u0013\u0001\u0000\u0000\u0000\u0015\u0016\u0001\u0000\u0000\u0000\u0016"+
-		"\u0003\u0001\u0000\u0000\u0000\u0017\u0015\u0001\u0000\u0000\u0000\u0018"+
-		"\u0019\u0003\u0006\u0003\u0000\u0019\u0005\u0001\u0000\u0000\u0000\u001a"+
-		"\u001b\u0005\r\u0000\u0000\u001b\u001c\u0003\b\u0004\u0000\u001c\u001d"+
-		"\u0005\u000e\u0000\u0000\u001d\u001e\u0003\n\u0005\u0000\u001e\u001f\u0001"+
-		"\u0000\u0000\u0000\u001f \u0005\u000f\u0000\u0000 !\u0003\n\u0005\u0000"+
-		"!\u0007\u0001\u0000\u0000\u0000\"#\u0005\b\u0000\u0000#$\u0003\f\u0006"+
-		"\u0000$%\u0005\t\u0000\u0000%\t\u0001\u0000\u0000\u0000&\'\u0005\b\u0000"+
-		"\u0000\'(\u0003\f\u0006\u0000()\u0005\t\u0000\u0000),\u0001\u0000\u0000"+
-		"\u0000*,\u0003\f\u0006\u0000+&\u0001\u0000\u0000\u0000+*\u0001\u0000\u0000"+
-		"\u0000,\u000b\u0001\u0000\u0000\u0000-.\u0006\u0006\uffff\uffff\u0000"+
-		"./\u0003\u000e\u0007\u0000/5\u0001\u0000\u0000\u000001\n\u0002\u0000\u0000"+
-		"12\u0007\u0000\u0000\u000024\u0003\f\u0006\u000330\u0001\u0000\u0000\u0000"+
-		"47\u0001\u0000\u0000\u000053\u0001\u0000\u0000\u000056\u0001\u0000\u0000"+
-		"\u00006\r\u0001\u0000\u0000\u000075\u0001\u0000\u0000\u000089\u0005\u0004"+
-		"\u0000\u00009:\u0003\f\u0006\u0000:;\u0005\u0005\u0000\u0000;B\u0001\u0000"+
-		"\u0000\u0000<B\u0005\u0011\u0000\u0000=B\u0005\u0012\u0000\u0000>B\u0007"+
-		"\u0001\u0000\u0000?B\u0005\u0010\u0000\u0000@B\u0005\u0013\u0000\u0000"+
-		"A8\u0001\u0000\u0000\u0000A<\u0001\u0000\u0000\u0000A=\u0001\u0000\u0000"+
-		"\u0000A>\u0001\u0000\u0000\u0000A?\u0001\u0000\u0000\u0000A@\u0001\u0000"+
-		"\u0000\u0000B\u000f\u0001\u0000\u0000\u0000\u0004\u0015+5A";
+		"\u0001\u0007\u0003\u0007>\b\u0007\u0001\u0007\u0000\u0001\f\b\u0000\u0002"+
+		"\u0004\u0006\b\n\f\u000e\u0000\u0003\u0001\u0000\u0001\u0002\u0001\u0000"+
+		"\u0012\u0013\u0001\u0000\n\u000b>\u0000\u0010\u0001\u0000\u0000\u0000"+
+		"\u0002\u0015\u0001\u0000\u0000\u0000\u0004\u0018\u0001\u0000\u0000\u0000"+
+		"\u0006\u001a\u0001\u0000\u0000\u0000\b\"\u0001\u0000\u0000\u0000\n+\u0001"+
+		"\u0000\u0000\u0000\f-\u0001\u0000\u0000\u0000\u000e=\u0001\u0000\u0000"+
+		"\u0000\u0010\u0011\u0003\u0002\u0001\u0000\u0011\u0001\u0001\u0000\u0000"+
+		"\u0000\u0012\u0014\u0003\u0004\u0002\u0000\u0013\u0012\u0001\u0000\u0000"+
+		"\u0000\u0014\u0017\u0001\u0000\u0000\u0000\u0015\u0013\u0001\u0000\u0000"+
+		"\u0000\u0015\u0016\u0001\u0000\u0000\u0000\u0016\u0003\u0001\u0000\u0000"+
+		"\u0000\u0017\u0015\u0001\u0000\u0000\u0000\u0018\u0019\u0003\u0006\u0003"+
+		"\u0000\u0019\u0005\u0001\u0000\u0000\u0000\u001a\u001b\u0005\r\u0000\u0000"+
+		"\u001b\u001c\u0003\b\u0004\u0000\u001c\u001d\u0005\u000e\u0000\u0000\u001d"+
+		"\u001e\u0003\n\u0005\u0000\u001e\u001f\u0001\u0000\u0000\u0000\u001f "+
+		"\u0005\u000f\u0000\u0000 !\u0003\n\u0005\u0000!\u0007\u0001\u0000\u0000"+
+		"\u0000\"#\u0005\b\u0000\u0000#$\u0003\f\u0006\u0000$%\u0005\t\u0000\u0000"+
+		"%\t\u0001\u0000\u0000\u0000&\'\u0005\b\u0000\u0000\'(\u0003\f\u0006\u0000"+
+		"()\u0005\t\u0000\u0000),\u0001\u0000\u0000\u0000*,\u0003\f\u0006\u0000"+
+		"+&\u0001\u0000\u0000\u0000+*\u0001\u0000\u0000\u0000,\u000b\u0001\u0000"+
+		"\u0000\u0000-.\u0006\u0006\uffff\uffff\u0000./\u0003\u000e\u0007\u0000"+
+		"/5\u0001\u0000\u0000\u000001\n\u0002\u0000\u000012\u0007\u0000\u0000\u0000"+
+		"24\u0003\f\u0006\u000330\u0001\u0000\u0000\u000047\u0001\u0000\u0000\u0000"+
+		"53\u0001\u0000\u0000\u000056\u0001\u0000\u0000\u00006\r\u0001\u0000\u0000"+
+		"\u000075\u0001\u0000\u0000\u00008>\u0007\u0001\u0000\u00009>\u0007\u0002"+
+		"\u0000\u0000:>\u0005\u0010\u0000\u0000;>\u0005\u0011\u0000\u0000<>\u0005"+
+		"\u0014\u0000\u0000=8\u0001\u0000\u0000\u0000=9\u0001\u0000\u0000\u0000"+
+		"=:\u0001\u0000\u0000\u0000=;\u0001\u0000\u0000\u0000=<\u0001\u0000\u0000"+
+		"\u0000>\u000f\u0001\u0000\u0000\u0000\u0004\u0015+5=";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

@@ -46,11 +46,10 @@ expr
  ;
 
 atom
- : OPAR expr CPAR                       #parExpr
- | INT                                  #integerAtom
- | FLOAT                                #floatAtom
+ : (INT | FLOAT)                        #numberAtom
  | (TRUE | FALSE)                       #booleanAtom
  | CO                                   #contextObjectAtom
+ | MDBF                                 #mdbfAtom
  | STRING                               #stringAtom
  ;
 
@@ -96,7 +95,11 @@ ELSE : 'else' | 'ELSE';
 CO
  // : [a-zA-Z_] [a-zA-Z_0-9]*
  // SA[EO:EO-TYPE]
- : 'SA[' [A-Z-]* ':' [A-Z-]* ']'
+ : 'SA[' [0-9A-Z-]* ':' [0-9A-Z-]* ']'
+ ;
+
+MDBF
+ : 'MDBF[' [0-9A-Z;:_-]* ']'
  ;
 
 INT

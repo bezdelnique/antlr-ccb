@@ -1,5 +1,7 @@
 package org.example.ccb;
 
+import java.math.BigDecimal;
+
 public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
     private final CCBDatasource ccbDatasource;
 
@@ -59,19 +61,10 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
         return new ValueHolder(left.equals(right));
     }
 
-    @Override
-    public ValueHolder visitParExpr(CCBParser.ParExprContext ctx) {
-        return super.visitParExpr(ctx);
-    }
 
     @Override
-    public ValueHolder visitIntegerAtom(CCBParser.IntegerAtomContext ctx) {
-        return new ValueHolder(Integer.valueOf(ctx.getText()));
-    }
-
-    @Override
-    public ValueHolder visitFloatAtom(CCBParser.FloatAtomContext ctx) {
-        return super.visitFloatAtom(ctx);
+    public ValueHolder visitNumberAtom(CCBParser.NumberAtomContext ctx) {
+        return new ValueHolder(new BigDecimal(ctx.getText().replace(",", ".")));
     }
 
     @Override
@@ -81,9 +74,20 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
                 : new ValueHolder(Boolean.FALSE);
     }
 
+
+    @Override
+    public ValueHolder visitCondition_block(CCBParser.Condition_blockContext ctx) {
+        return super.visitCondition_block(ctx);
+    }
+
+    @Override
+    public ValueHolder visitMdbfAtom(CCBParser.MdbfAtomContext ctx) {
+        return ccbDatasource.getMultidimensionalBillFactorValue(ctx.getText());
+    }
+
     @Override
     public ValueHolder visitContextObjectAtom(CCBParser.ContextObjectAtomContext ctx) {
-        return super.visitContextObjectAtom(ctx);
+        return ccbDatasource.getContextObjectValue(ctx.getText());
     }
 
     @Override

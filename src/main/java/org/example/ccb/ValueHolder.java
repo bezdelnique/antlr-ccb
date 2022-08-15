@@ -1,5 +1,7 @@
 package org.example.ccb;
 
+import java.math.BigDecimal;
+
 public class ValueHolder {
     public static ValueHolder VOID = new ValueHolder(new Object());
 
@@ -13,16 +15,16 @@ public class ValueHolder {
         return (Boolean) value;
     }
 
-    public Double asDouble() {
-        return (Double) value;
+    public BigDecimal asNumber() {
+        return (BigDecimal) value;
     }
 
     public String asString() {
         return String.valueOf(value);
     }
 
-    public boolean isDouble() {
-        return value instanceof Double;
+    public boolean isNumber() {
+        return value instanceof BigDecimal;
     }
 
     @Override

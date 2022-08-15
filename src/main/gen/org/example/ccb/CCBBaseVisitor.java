@@ -75,21 +75,7 @@ public class CCBBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CC
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitParExpr(CCBParser.ParExprContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitIntegerAtom(CCBParser.IntegerAtomContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitFloatAtom(CCBParser.FloatAtomContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNumberAtom(CCBParser.NumberAtomContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -103,7 +89,14 @@ public class CCBBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CC
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdAtom(CCBParser.IdAtomContext ctx) { return visitChildren(ctx); }
+	@Override public T visitContextObjectAtom(CCBParser.ContextObjectAtomContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitMdbfAtom(CCBParser.MdbfAtomContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

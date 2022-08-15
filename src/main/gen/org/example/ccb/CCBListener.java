@@ -94,41 +94,17 @@ public interface CCBListener extends ParseTreeListener {
 	 */
 	void exitEqualityExpr(CCBParser.EqualityExprContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code parExpr}
+	 * Enter a parse tree produced by the {@code numberAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
 	 * @param ctx the parse tree
 	 */
-	void enterParExpr(CCBParser.ParExprContext ctx);
+	void enterNumberAtom(CCBParser.NumberAtomContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code parExpr}
+	 * Exit a parse tree produced by the {@code numberAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
 	 * @param ctx the parse tree
 	 */
-	void exitParExpr(CCBParser.ParExprContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code integerAtom}
-	 * labeled alternative in {@link CCBParser#atom}.
-	 * @param ctx the parse tree
-	 */
-	void enterIntegerAtom(CCBParser.IntegerAtomContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code integerAtom}
-	 * labeled alternative in {@link CCBParser#atom}.
-	 * @param ctx the parse tree
-	 */
-	void exitIntegerAtom(CCBParser.IntegerAtomContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code floatAtom}
-	 * labeled alternative in {@link CCBParser#atom}.
-	 * @param ctx the parse tree
-	 */
-	void enterFloatAtom(CCBParser.FloatAtomContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code floatAtom}
-	 * labeled alternative in {@link CCBParser#atom}.
-	 * @param ctx the parse tree
-	 */
-	void exitFloatAtom(CCBParser.FloatAtomContext ctx);
+	void exitNumberAtom(CCBParser.NumberAtomContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code booleanAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
@@ -142,17 +118,29 @@ public interface CCBListener extends ParseTreeListener {
 	 */
 	void exitBooleanAtom(CCBParser.BooleanAtomContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code idAtom}
+	 * Enter a parse tree produced by the {@code contextObjectAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
 	 * @param ctx the parse tree
 	 */
-	void enterIdAtom(CCBParser.IdAtomContext ctx);
+	void enterContextObjectAtom(CCBParser.ContextObjectAtomContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code idAtom}
+	 * Exit a parse tree produced by the {@code contextObjectAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
 	 * @param ctx the parse tree
 	 */
-	void exitIdAtom(CCBParser.IdAtomContext ctx);
+	void exitContextObjectAtom(CCBParser.ContextObjectAtomContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code mdbfAtom}
+	 * labeled alternative in {@link CCBParser#atom}.
+	 * @param ctx the parse tree
+	 */
+	void enterMdbfAtom(CCBParser.MdbfAtomContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code mdbfAtom}
+	 * labeled alternative in {@link CCBParser#atom}.
+	 * @param ctx the parse tree
+	 */
+	void exitMdbfAtom(CCBParser.MdbfAtomContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code stringAtom}
 	 * labeled alternative in {@link CCBParser#atom}.

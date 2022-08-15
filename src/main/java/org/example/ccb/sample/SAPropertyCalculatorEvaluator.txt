@@ -1,0 +1,70 @@
+package ru.sigma.utilities.billing.domain.common.math.calculator;
+
+import com.ibm.icu.math.BigDecimal;
+import lombok.extern.slf4j.Slf4j;
+import ru.sigma.utilities.billing.api.lookup.CmMultidimensionalBillFactorSourceLookup;
+import ru.sigma.utilities.billing.datatype.Bool;
+import ru.sigma.utilities.billing.datatype.Date;
+import ru.sigma.utilities.billing.datatype.Period;
+import ru.sigma.utilities.billing.datatype.Period_Id;
+import ru.sigma.utilities.billing.datatype.lookup.LookupHelper;
+import ru.sigma.utilities.billing.domain.entity.admin.billFactor.algorithm.rateSelection.BillFactorPeriodData;
+import ru.sigma.utilities.billing.domain.entity.admin.intervalProfileType.IntervalProfileType_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.multidimensionalBillFactor.SAPropertyAccessor;
+import ru.sigma.utilities.billing.domain.entity.admin.serviceQuantityIdentifier.ServiceQuantityIdentifier_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.timeOfUse.TimeOfUse_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.unitOfMeasure.UnitOfMeasure_Id;
+import ru.sigma.utilities.billing.domain.entity.billing.data.BillSegmentServiceQuantityData;
+import ru.sigma.utilities.billing.domain.entity.common.data.CharacteristicData;
+import ru.sigma.utilities.billing.domain.entity.customerinfo.serviceAgreement.ServiceAgreement;
+import ru.sigma.utilities.billing.domain.entity.intervalbilling.intervalDataProfile.IntervalDataProfile;
+import ru.sigma.utilities.billing.domain.entity.rate.rateComponent.value.IntervalValuesContextData;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author faust
+ */
+@Slf4j
+public class SAPropertyCalculatorEvaluator extends AbstractPropertyCalculatorEvaluator<ServiceAgreement> {
+    public SAPropertyCalculatorEvaluator(ServiceAgreement contextObject, Date effectiveDate, Bool generateMathOperationError, Map<String, BigDecimal> parameters, BigInteger scale) {
+        super(contextObject, effectiveDate, generateMathOperationError, parameters, scale);
+    }
+
+    public SAPropertyCalculatorEvaluator(ServiceAgreement contextObject, Date effectiveDate, Bool generateMathOperationError, Map<String, BigDecimal> parameters, BigInteger scale, BillFactorPeriodData billFactorPeriodData, List<CharacteristicData> characteristicDataList, List<BillSegmentServiceQuantityData> billSegmentServiceQuantityDataList, TimeOfUse_Id timeOfUseId, UnitOfMeasure_Id unitOfMeasureId, ServiceQuantityIdentifier_Id serviceQuantityIdentifierId) {
+        super(contextObject, effectiveDate, generateMathOperationError, parameters, scale, billFactorPeriodData, characteristicDataList, billSegmentServiceQuantityDataList, timeOfUseId, unitOfMeasureId, serviceQuantityIdentifierId);
+    }
+
+    public SAPropertyCalculatorEvaluator(ServiceAgreement contextObject, Date effectiveDate, Bool generateMathOperationError, Map<String, BigDecimal> parameters, BigInteger scale, BillFactorPeriodData billFactorPeriodData, List<CharacteristicData> characteristicDataList, List<BillSegmentServiceQuantityData> billSegmentServiceQuantityDataList, TimeOfUse_Id timeOfUseId, UnitOfMeasure_Id unitOfMeasureId, ServiceQuantityIdentifier_Id serviceQuantityIdentifierId, Period period, IntervalValuesContextData contextIntervalData) {
+        super(contextObject, effectiveDate, generateMathOperationError, parameters, scale, billFactorPeriodData, characteristicDataList, billSegmentServiceQuantityDataList, timeOfUseId, unitOfMeasureId, serviceQuantityIdentifierId, period, contextIntervalData);
+    }
+
+    protected IntervalDataProfile getIntervalDataProfile(ServiceAgreement contextObject, Period_Id periodId, IntervalProfileType_Id intervalProfileTypeId) {
+        return contextObject.getEORateFacade().getIntervalDataProfile(periodId, intervalProfileTypeId);
+    }
+
+
+    protected String getContextObjectProperty(String operandString) {
+        String result = contextObjectPropertyCache.get(operandString);
+        if (result == null) {
+            String code = operandString.replace("SA[", "").replace("]", "");
+            String[] propertyPart = code.split(";");
+            String[] codePart = propertyPart[0].split(":");
+            CmMultidimensionalBillFactorSourceLookup source = LookupHelper.getLookupValue(CmMultidimensionalBillFactorSourceLookup.class, codePart[0]);
+            String propertyValue = null;
+            if (codePart.length > 1) {
+                propertyValue = codePart[1];
+            }
+
+            result = SAPropertyAccessor.getInstance().getPropertyValue(contextObject, effectiveDate, source, propertyValue);
+            if (result == null && propertyPart.length > 1) {
+                result = propertyPart[1];
+            }
+
+            contextObjectPropertyCache.put(operandString, result);
+        }
+        return result;
+    }
+}

@@ -1,0 +1,795 @@
+package org.example.ccb.sample;
+
+import com.ibm.icu.math.BigDecimal;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.cfg.NotYetImplementedException;
+import ru.sigma.utilities.billing.api.lookup.CriteriaOperatorLookup;
+import ru.sigma.utilities.billing.api.lookup.CriteriaResultLookup;
+import ru.sigma.utilities.billing.api.lookup.MathOperationLookup;
+import ru.sigma.utilities.billing.core.entity.GenericObject;
+import ru.sigma.utilities.billing.datatype.Bool;
+import ru.sigma.utilities.billing.datatype.Date;
+import ru.sigma.utilities.billing.datatype.DateTime;
+import ru.sigma.utilities.billing.datatype.Period;
+import ru.sigma.utilities.billing.datatype.Period_Id;
+import ru.sigma.utilities.billing.datatype.exception.ApplicationError;
+import ru.sigma.utilities.billing.datatype.exception.ServerMessage;
+import ru.sigma.utilities.billing.datatype.lookup.LookupHelper;
+import ru.sigma.utilities.billing.domain.algorithmSpot.admin.billFactor.algorithm.rateSelection.RateSelectionDateAlgorithmSpot;
+import ru.sigma.utilities.billing.domain.common.Formatter;
+import ru.sigma.utilities.billing.domain.common.IntervalDataHelper;
+import ru.sigma.utilities.billing.domain.common.MathOperator;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.BigDecimalTokenValue;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.BooleanTokenValue;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.ITokenValue;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.IntervalDataTokenValue;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.Lexer;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.SAPropertyTokenType;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.StringTokenValue;
+import ru.sigma.utilities.billing.domain.common.math.calculator.lexer.Token;
+import ru.sigma.utilities.billing.domain.entity.admin.billFactor.algorithm.rateSelection.BillFactorPeriodData;
+import ru.sigma.utilities.billing.domain.entity.admin.eligibility.CriteriaOperatorHelper;
+import ru.sigma.utilities.billing.domain.entity.admin.intervalProfileType.IntervalProfileType_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.multidimensionalBillFactor.CmMultidimensionalBillFactor;
+import ru.sigma.utilities.billing.domain.entity.admin.multidimensionalBillFactor.CmMultidimensionalBillFactorInstance;
+import ru.sigma.utilities.billing.domain.entity.admin.multidimensionalBillFactor.CmMultidimensionalBillFactor_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.multidimensionalBillFactor.DimensionDefaultValue;
+import ru.sigma.utilities.billing.domain.entity.admin.serviceQuantityIdentifier.ServiceQuantityIdentifier_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.timeOfUse.TimeOfUse_Id;
+import ru.sigma.utilities.billing.domain.entity.admin.unitOfMeasure.UnitOfMeasure_Id;
+import ru.sigma.utilities.billing.domain.entity.billing.billSegment.BillSegmentServiceQuantity_DTO;
+import ru.sigma.utilities.billing.domain.entity.billing.billSegment.BillSegmentServiceQuantity_Id;
+import ru.sigma.utilities.billing.domain.entity.billing.data.BillSegmentServiceQuantityData;
+import ru.sigma.utilities.billing.domain.entity.common.algorithm.Algorithm;
+import ru.sigma.utilities.billing.domain.entity.common.characteristicType.CharacteristicType_Id;
+import ru.sigma.utilities.billing.domain.entity.common.data.CharacteristicData;
+import ru.sigma.utilities.billing.domain.entity.intervalbilling.intervalDataProfile.IntervalDataProfile;
+import ru.sigma.utilities.billing.domain.entity.intervalbilling.intervalDataSet.IntervalDataSet;
+import ru.sigma.utilities.billing.domain.entity.rate.rateComponent.value.IntervalValuesContextData;
+import ru.sigma.utilities.billing.domain.message.CmSystemMessageRepository;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+
+@Slf4j
+public abstract class AbstractPropertyCalculatorEvaluator<T> extends GenericObject implements ICalculatorEvaluator {
+    protected final T contextObject;
+    protected final Date effectiveDate;
+
+    protected final Bool generateMathOperationError;
+    protected final Map<String, BigDecimal> parameters;
+    protected final BigInteger scale;
+
+    protected final Map<String, String> contextObjectPropertyCache = new HashMap<>();
+    protected final Map<String, BigDecimal> mdbfCache = new HashMap<>();
+
+    protected final BillFactorPeriodData billFactorPeriodData;
+    protected final List<CharacteristicData> characteristicDataList;
+    protected final List<BillSegmentServiceQuantityData> billSegmentServiceQuantityDataList;
+
+    protected final TimeOfUse_Id timeOfUseId;
+    protected final UnitOfMeasure_Id unitOfMeasureId;
+    protected final ServiceQuantityIdentifier_Id serviceQuantityIdentifierId;
+
+
+    protected final Map<CmMultidimensionalBillFactor_Id, Date> bfEffectiveDateCache = new HashMap<>();
+
+    protected final Period period;
+    protected final IntervalValuesContextData contextIntervalData;
+    protected final Map<String, Map<DateTime, BigDecimal>> intervalMDBFCache = new HashMap<>();
+
+    private boolean isIntegral = true;
+
+    public AbstractPropertyCalculatorEvaluator(T contextObject, Date effectiveDate, Bool generateMathOperationError,
+                                               Map<String, BigDecimal> parameters, BigInteger scale) {
+        this.contextObject = contextObject;
+        this.effectiveDate = effectiveDate;
+        this.generateMathOperationError = generateMathOperationError;
+        this.parameters = Objects.requireNonNullElseGet(parameters, HashMap::new);
+        this.scale = scale;
+
+        this.billFactorPeriodData = null;
+        this.characteristicDataList = null;
+        this.billSegmentServiceQuantityDataList = null;
+        this.timeOfUseId = null;
+        this.unitOfMeasureId = null;
+        this.serviceQuantityIdentifierId = null;
+
+        this.period = null;
+        this.contextIntervalData = null;
+    }
+
+    public AbstractPropertyCalculatorEvaluator(
+            T contextObject, Date effectiveDate, Bool generateMathOperationError,
+            Map<String, BigDecimal> parameters, BigInteger scale, BillFactorPeriodData billFactorPeriodData,
+            List<CharacteristicData> characteristicDataList,
+            List<BillSegmentServiceQuantityData> billSegmentServiceQuantityDataList, TimeOfUse_Id timeOfUseId,
+            UnitOfMeasure_Id unitOfMeasureId, ServiceQuantityIdentifier_Id serviceQuantityIdentifierId) {
+
+        this.contextObject = contextObject;
+        this.effectiveDate = effectiveDate;
+        this.generateMathOperationError = generateMathOperationError;
+        this.parameters = Objects.requireNonNullElseGet(parameters, HashMap::new);
+        this.scale = scale;
+        this.billFactorPeriodData = billFactorPeriodData;
+        this.characteristicDataList = characteristicDataList;
+        this.billSegmentServiceQuantityDataList = billSegmentServiceQuantityDataList;
+        this.timeOfUseId = timeOfUseId;
+        this.unitOfMeasureId = unitOfMeasureId;
+        this.serviceQuantityIdentifierId = serviceQuantityIdentifierId;
+
+        this.period = null;
+        this.contextIntervalData = null;
+    }
+
+    public AbstractPropertyCalculatorEvaluator(
+            T contextObject, Date effectiveDate, Bool generateMathOperationError,
+            Map<String, BigDecimal> parameters, BigInteger scale, BillFactorPeriodData billFactorPeriodData,
+            List<CharacteristicData> characteristicDataList,
+            List<BillSegmentServiceQuantityData> billSegmentServiceQuantityDataList, TimeOfUse_Id timeOfUseId,
+            UnitOfMeasure_Id unitOfMeasureId, ServiceQuantityIdentifier_Id serviceQuantityIdentifierId,
+            Period period, IntervalValuesContextData contextIntervalData) {
+
+        this.contextObject = contextObject;
+        this.effectiveDate = effectiveDate;
+        this.generateMathOperationError = generateMathOperationError;
+        this.parameters = Objects.requireNonNullElseGet(parameters, HashMap::new);
+        this.scale = scale;
+        this.billFactorPeriodData = billFactorPeriodData;
+        this.characteristicDataList = characteristicDataList;
+        this.billSegmentServiceQuantityDataList = billSegmentServiceQuantityDataList;
+        this.timeOfUseId = timeOfUseId;
+        this.unitOfMeasureId = unitOfMeasureId;
+        this.serviceQuantityIdentifierId = serviceQuantityIdentifierId;
+        this.period = period;
+        this.contextIntervalData = contextIntervalData;
+        isIntegral = false;
+    }
+
+
+    @Override
+    public ITokenValue evaluate(Token operator, Token leftOperand, Token rightOperand) {
+        ITokenValue result = null;
+
+        if (SAPropertyTokenType.BOOLEAN_BINARY_OP.equals(operator.getTokenType())) {
+            result = booleanBinaryOperation(operator, leftOperand, rightOperand);
+        } else if (SAPropertyTokenType.MATH_BINARY_OP.equals(operator.getTokenType())) {
+            result = mathBinaryOperation(operator, leftOperand, rightOperand);
+        } else if (SAPropertyTokenType.UNARY_OP.equals(operator.getTokenType())) {
+            result = booleanUnaryOperation(operator, leftOperand, rightOperand);
+        } else if (SAPropertyTokenType.COMPARE_OP.equals(operator.getTokenType())) {
+            result = compareBinaryOperation(operator, leftOperand, rightOperand);
+        } else if (SAPropertyTokenType.IN_OP.equals(operator.getTokenType())) {
+            result = inOperation(operator, leftOperand, rightOperand);
+        } else if (SAPropertyTokenType.NUMBER.equals(operator.getTokenType())) {
+            result = new BigDecimalTokenValue(getOperandValueAsBigDecimal(operator));
+        } else if (SAPropertyTokenType.INTERVAL_DATA.equals(operator.getTokenType())) {
+            result = new IntervalDataTokenValue(getOperandValueAsMap(operator));
+        } else {
+            result = new StringTokenValue(getOperandValueAsString(operator));
+        }
+
+        return result;
+    }
+
+    @Override
+    public ITokenValue evaluate(Token operand) {
+        throw new NotYetImplementedException();
+    }
+
+    protected void processArithmeticException(Exception e, MathOperationLookup operation, BigDecimal operand1Value, BigDecimal operand2Value, String operand1, String operand2) {
+
+        ServerMessage message = CmSystemMessageRepository.error(String.format("%s %s (%s) %s (%s) не выполнилось", operation, operand1, Formatter.format(operand1Value), operand2, Formatter.format(operand2Value)));
+
+        log.error(message.getMessageText());
+
+        if (generateMathOperationError != null && generateMathOperationError.isTrue()) {
+            throw new ApplicationError(message);
+        }
+    }
+
+    private void processArithmeticException(Exception e, MathOperationLookup operation, Map<DateTime, BigDecimal> operand1Value, Map<DateTime, BigDecimal> operand2Value, String operand1, String operand2) {
+
+        ServerMessage message = CmSystemMessageRepository.error(String.format("%s %s %s не выполнилось", operation, operand1, operand1Value, operand2, operand2Value));
+
+        log.error(message.getMessageText());
+
+        if (generateMathOperationError != null && generateMathOperationError.isTrue()) {
+            throw new ApplicationError(message);
+        }
+    }
+
+    protected BigDecimal getScaledValue(BigDecimal value) {
+        if (value != null && scale != null) {
+            int valueScale = value.scale();
+            if (valueScale < scale.intValue()) {
+                value = value.setScale(scale.intValue(), BigDecimal.ROUND_HALF_UP);
+            }
+        }
+        return value;
+    }
+
+    protected void setScaledValueForMap(Map<DateTime, BigDecimal> map) {
+        if (scale != null && map != null) {
+            for (Map.Entry<DateTime, BigDecimal> e : map.entrySet()) {
+                e.setValue(getScaledValue(e.getValue()));
+            }
+        }
+    }
+
+    @Override
+    public int getOperatorOrderer(Token token) {
+        String operator = (String) token.getValue().getValue();
+        if ("&&".equals(operator)) {
+            return 2;
+        } else if ("||".equals(operator)) {
+            return 1;
+        } else if (">".equals(operator) || ">=".equals(operator) || "=".equals(operator) || "<".equals(operator) || "<=".equals(operator) || "<>".equals(operator)) {
+            return 3;
+        } else if ("**".equals(operator)) {
+            return 30;
+        }
+        if ("*".equals(operator) || "/".equals(operator)) {
+            return 20;
+        } else if ("+".equals(operator) || "-".equals(operator)) {
+            return 10;
+        } else {
+            return 0;
+        }
+    }
+
+    protected Date getEffectiveDate(CmMultidimensionalBillFactor billFactor) {
+        Date result = effectiveDate;
+
+        if (!isNull(billFactorPeriodData)) {
+            result = bfEffectiveDateCache.get(billFactor.getId());
+            if (isNull(result)) {
+                Algorithm alg = billFactor.getBillFactor().fetchRateSelectionDateAlg();
+                if (!isNull(alg)) {
+                    try {
+                        RateSelectionDateAlgorithmSpot spot = alg.getAlgorithmComponent(RateSelectionDateAlgorithmSpot.class);
+                        spot.setBillFactorPeriodData(billFactorPeriodData);
+                        spot.invoke();
+                        result = spot.getReferenceDate();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                bfEffectiveDateCache.put(billFactor.getId(), result);
+            }
+        }
+        if (isNull(result)) {
+            result = effectiveDate;
+        }
+        return result;
+    }
+
+    //<editor-fold defaultstate="collapsed" desc="Operand Values Getters">
+
+    protected BigDecimal getOperandValueAsBigDecimal(Token operand) {
+        BigDecimal operandValue = null;
+
+        Object operandObject = operand.getValue().getValue();
+        if (operand.getTokenType().equals(SAPropertyTokenType.NUMBER)) {
+            operandValue = (BigDecimal) operandObject;
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IDENT)) {
+            operandValue = parameters.get((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.VALUE)) {
+            operandValue = (BigDecimal) operandObject;
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.STRING_CONSTANT)) {
+            operandValue = Formatter.parseBigDecimal(((String) operandObject).replace("'", ""));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CONTEXT_OBJECT_PROPERTY)) {
+            operandValue = Formatter.parseBigDecimal(getContextObjectProperty((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.MULTIDIMENSIONAL_BILL_FACTOR)) {
+            operandValue = getMultidimensionalBillFactorValue((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.INTERVAL_DATA)) {
+            Map<DateTime, BigDecimal> map = getIntervalData((String) operandObject);
+            if (map != null) {
+                operandValue = BigDecimal.ZERO;
+                for (BigDecimal value : map.values()) {
+                    operandValue = operandValue.add(value);
+                }
+            }
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.SQI_VALUE)) {
+            operandValue = getSQI((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CHARACTERISTIC_DATA)) {
+            operandValue = Formatter.parseBigDecimal(getCharacteristicData((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IF_THEN_ELSE)) {
+            operandValue = (BigDecimal) ifThenElse((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.ERROR)) {
+            processError((String) operandObject);
+        } else {
+            addError(CmSystemMessageRepository.error(String.format("Операнд %s не может быть распознан как BigDecimal", operand)));
+        }
+        operandValue = getScaledValue(operandValue);
+
+        return operandValue;
+    }
+
+    protected Map<DateTime, BigDecimal> getOperandValueAsMap(Token operand) {
+        Map<DateTime, BigDecimal> operandValue = null;
+
+        Object operandObject = operand.getValue().getValue();
+        BigDecimal integralValue = null;
+        if (operand.getTokenType().equals(SAPropertyTokenType.NUMBER)) {
+            integralValue = (BigDecimal) operandObject;
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IDENT)) {
+            operandValue = contextIntervalData.getIntervalValues((String) operandObject);
+            if (operandValue == null) {
+                integralValue = parameters.get((String) operandObject);
+            }
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.VALUE)) {
+            if (operandObject instanceof BigDecimal) {
+                integralValue = (BigDecimal) operandObject;
+            } else {
+                operandValue = (Map<DateTime, BigDecimal>) operandObject;
+            }
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.STRING_CONSTANT)) {
+            integralValue = Formatter.parseBigDecimal(((String) operandObject).replace("'", ""));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CONTEXT_OBJECT_PROPERTY)) {
+            integralValue = Formatter.parseBigDecimal(getContextObjectProperty((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.MULTIDIMENSIONAL_BILL_FACTOR)) {
+            operandValue = getMultidimensionalBillFactorIntervalValues((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.INTERVAL_DATA)) {
+            operandValue = getIntervalData((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.SQI_VALUE)) {
+            integralValue = getSQI((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CHARACTERISTIC_DATA)) {
+            integralValue = Formatter.parseBigDecimal(getCharacteristicData((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IF_THEN_ELSE)) {
+            Object ifTheElseResult = ifThenElse((String) operandObject);
+            if (ifTheElseResult instanceof BigDecimal) {
+                integralValue = (BigDecimal) ifTheElseResult;
+            } else {
+                operandValue = (Map<DateTime, BigDecimal>) ifTheElseResult;
+            }
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.ERROR)) {
+            processError((String) operandObject);
+        } else {
+            addError(CmSystemMessageRepository.error(String.format("Операнд %s не может быть распознан как Map<DateTime,BigDecimal>", operand)));
+        }
+        if (integralValue != null) {
+            operandValue = IntervalDataHelper.getInstance().copyEachDay(period, integralValue);
+        }
+        setScaledValueForMap(operandValue);
+
+        return operandValue;
+    }
+
+    protected String getOperandValueAsString(Token operand) {
+        String operandValue = null;
+        Object operandObject = operand.getValue().getValue();
+        if (operand.getTokenType().equals(SAPropertyTokenType.NUMBER)) {
+            operandValue = Formatter.format((BigDecimal) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.VALUE)) {
+            if (operandObject instanceof BigDecimal) {
+                operandValue = Formatter.format((BigDecimal) operandObject);
+            } else if (operandObject instanceof Bool) {
+                operandValue = Formatter.format((Bool) operandObject);
+            } else if (operandObject instanceof Map) {
+                operandValue = ((Map) operandObject).toString();
+            }
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IDENT)) {
+            operandValue = Formatter.format(parameters.get((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.STRING_CONSTANT)) {
+            operandValue = ((String) operandObject).replace("'", "");
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CONTEXT_OBJECT_PROPERTY)) {
+            operandValue = getContextObjectProperty((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.MULTIDIMENSIONAL_BILL_FACTOR)) {
+            operandValue = Formatter.format(getMultidimensionalBillFactorValue((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.SQI_VALUE)) {
+            operandValue = Formatter.format(getSQI((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CHARACTERISTIC_DATA)) {
+            operandValue = getCharacteristicData((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IF_THEN_ELSE)) {
+            Object calculatedValue = ifThenElse((String) operandObject);
+            if (calculatedValue instanceof BigDecimal) {
+                operandValue = Formatter.format((BigDecimal) calculatedValue);
+            } else if (calculatedValue instanceof Bool) {
+                operandValue = Formatter.format((Bool) calculatedValue);
+            } else if (calculatedValue instanceof Map) {
+                operandValue = ((Map) calculatedValue).toString();
+            } else {
+                operandValue = (String) calculatedValue;
+            }
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.ERROR)) {
+            processError((String) operandObject);
+        } else {
+            addError(CmSystemMessageRepository.error(String.format("Операнд %s не может быть распознан как String", operand)));
+        }
+        return operandValue;
+    }
+
+    protected Bool getOperandValueAsBool(Token operand) {
+        Bool operandValue = null;
+        Object operandObject = operand.getValue().getValue();
+
+        if (operand.getTokenType().equals(SAPropertyTokenType.VALUE)) {
+            operandValue = (Bool) operandObject;
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.STRING_CONSTANT)) {
+            operandValue = Formatter.parseBool(((String) operandObject).replace("'", ""));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CONTEXT_OBJECT_PROPERTY)) {
+            operandValue = Formatter.parseBool(getContextObjectProperty((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.CHARACTERISTIC_DATA)) {
+            operandValue = Formatter.parseBool(getCharacteristicData((String) operandObject));
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.IF_THEN_ELSE)) {
+            operandValue = (Bool) ifThenElse((String) operandObject);
+        } else if (operand.getTokenType().equals(SAPropertyTokenType.ERROR)) {
+            processError((String) operandObject);
+        } else {
+            addError(CmSystemMessageRepository.error(String.format("Операнд %s не может быть распознан как Bool", operand)));
+        }
+        return operandValue;
+    }
+
+    //</editor-fold>
+
+    //<editor-fold defaultstate="collapsed" desc="Operations">
+
+    protected BooleanTokenValue booleanBinaryOperation(Token operator, Token leftOperand, Token rightOperand) {
+        Bool resultValue = null;
+
+        String operatorStringValue = ((ITokenValue<String>) operator.getValue()).getValue();
+        if ("&&".equals(operatorStringValue)) {
+            Bool leftOperandValue = getOperandValueAsBool(leftOperand);
+            if (!leftOperandValue.asJavaBoolean()) {
+                resultValue = Bool.FALSE;
+            } else {
+                resultValue = getOperandValueAsBool(rightOperand);
+            }
+        } else if ("||".equals(operatorStringValue)) {
+            Bool leftOperandValue = getOperandValueAsBool(leftOperand);
+            if (leftOperandValue.asJavaBoolean()) {
+                resultValue = Bool.TRUE;
+            } else {
+                resultValue = getOperandValueAsBool(rightOperand);
+            }
+        } else {
+            throw new RuntimeException(String.format("Операция %s не определена", operatorStringValue));
+        }
+        return new BooleanTokenValue(resultValue);
+    }
+
+    protected ITokenValue mathBinaryOperation(Token operator, Token leftOperand, Token rightOperand) {
+        String operatorStringValue = ((ITokenValue<String>) operator.getValue()).getValue();
+        MathOperationLookup mathOperationLookup = LookupHelper.getLookupValue(MathOperationLookup.class, operatorStringValue);
+        MathOperator mathOperator = MathOperator.getInstance();
+
+        ITokenValue result = null;
+
+        if (isIntegral) {
+            BigDecimal resultValue = null;
+
+            BigDecimal leftOperandValue = getOperandValueAsBigDecimal(leftOperand);
+            BigDecimal rightOperandValue = getOperandValueAsBigDecimal(rightOperand);
+
+            try {
+                resultValue = mathOperator.execute(mathOperationLookup, leftOperandValue, rightOperandValue);
+            } catch (Exception e) {
+                processArithmeticException(
+                        e
+                        , mathOperationLookup
+                        , leftOperandValue
+                        , rightOperandValue
+                        , Formatter.format(leftOperandValue)
+                        , Formatter.format(rightOperandValue)
+                );
+            }
+
+            result = new BigDecimalTokenValue(resultValue);
+
+        } else {
+            Map<DateTime, BigDecimal> resultValue = null;
+
+            Map<DateTime, BigDecimal> leftOperandValue = getOperandValueAsMap(leftOperand);
+            Map<DateTime, BigDecimal> rightOperandValue = getOperandValueAsMap(rightOperand);
+
+            try {
+                resultValue = mathOperator.execute(mathOperationLookup, false, leftOperandValue, rightOperandValue);
+            } catch (Exception e) {
+                processArithmeticException(e, mathOperationLookup, leftOperandValue, rightOperandValue, ((ITokenValue<String>) leftOperand.getValue()).getValue(), ((ITokenValue<String>) rightOperand.getValue()).getValue());
+            }
+
+            result = new IntervalDataTokenValue(resultValue);
+        }
+        return result;
+    }
+
+    protected BooleanTokenValue booleanUnaryOperation(Token operator, Token leftOperand, Token rightOperand) {
+        Bool resultValue = null;
+        Bool leftOperandValue = getOperandValueAsBool(leftOperand);
+        String operatorStringValue = ((ITokenValue<String>) operator.getValue()).getValue();
+        if ("!".equals(operatorStringValue)) {
+            resultValue = leftOperandValue.not();
+        } else {
+            throw new RuntimeException(String.format("Операция %s не определена", operatorStringValue));
+        }
+        return new BooleanTokenValue(resultValue);
+    }
+
+    protected BooleanTokenValue compareBinaryOperation(Token operator, Token leftOperand, Token rightOperand) {
+        Bool resultValue = null;
+        String leftOperandValue = getOperandValueAsString(leftOperand);
+        String rightOperandValue = getOperandValueAsString(rightOperand);
+        String operatorStringValue = ((ITokenValue<String>) operator.getValue()).getValue();
+
+        CriteriaOperatorLookup criteriaOperatorLookup = LookupHelper.getLookupValue(CriteriaOperatorLookup.class, operatorStringValue);
+        CriteriaResultLookup criteriaResultLookup = CriteriaOperatorHelper.getInstance().processCriteriaOperator(criteriaOperatorLookup, leftOperandValue, rightOperandValue);
+
+        resultValue = Bool.valueOf(criteriaResultLookup.isTrue());
+
+        return new BooleanTokenValue(resultValue);
+    }
+
+    protected BooleanTokenValue inOperation(Token operator, Token leftOperand, Token rightOperand) {
+        Bool resultValue = null;
+        String leftOperandValue = getOperandValueAsString(leftOperand);
+        String operatorStringValue = ((ITokenValue<String>) operator.getValue()).getValue();
+
+        CriteriaOperatorLookup criteriaOperatorLookup = null;
+        if (operatorStringValue.startsWith("IN")) {
+            criteriaOperatorLookup = CriteriaOperatorLookup.IN;
+            operatorStringValue = operatorStringValue.replace("IN", "").trim();
+        } else if (operatorStringValue.startsWith("BETW")) {
+            criteriaOperatorLookup = CriteriaOperatorLookup.BETWEEN;
+            operatorStringValue = operatorStringValue.replace("BETW", "").trim();
+        }
+        operatorStringValue = (operatorStringValue).replace("(", "").replace(")", "").replace("'", "").replace("'", "");
+
+        CriteriaResultLookup criteriaResultLookup = CriteriaOperatorHelper.getInstance().processCriteriaOperator(criteriaOperatorLookup, leftOperandValue, operatorStringValue);
+
+        resultValue = Bool.valueOf(criteriaResultLookup.isTrue());
+
+        return new BooleanTokenValue(resultValue);
+    }
+
+    //</editor-fold>
+
+    //<editor-fold defaultstate="collapsed" desc="Accessors">
+
+
+    protected BigDecimal getMultidimensionalBillFactorValue(String operandString) {
+        BigDecimal result = mdbfCache.get(operandString);
+        if (result == null) {
+            MultidimensionalBillFactorValueParameters multidimensionalBillFactorValueParameters = getMultidimensionalBillFactorValueParameters(
+                    operandString);
+//            result = multidimensionalBillFactorValueParameters.billFactor.getValue(
+//                    sa
+//                    , getEffectiveDate(multidimensionalBillFactorValueParameters.billFactor)
+//                    , multidimensionalBillFactorValueParameters.defaultValues
+//            );
+
+            Map<BigInteger, String> mdbfParameters = multidimensionalBillFactorValueParameters.billFactor.getParameters(
+                    contextObject
+                    , getEffectiveDate(multidimensionalBillFactorValueParameters.billFactor)
+                    , multidimensionalBillFactorValueParameters.defaultValues
+            );
+            for (Map.Entry<BigInteger, String> entry : multidimensionalBillFactorValueParameters.defaultValues.entrySet()) {
+                mdbfParameters.put(entry.getKey(), entry.getValue());
+            }
+            CmMultidimensionalBillFactorInstance instance = multidimensionalBillFactorValueParameters.billFactor.getInstance(mdbfParameters);
+            if (!isNull(instance)) {
+                result = instance.getEffectiveBillFactorValue(effectiveDate);
+            }
+
+            if (result == null) {
+                result = multidimensionalBillFactorValueParameters.defaultValue;
+            }
+            mdbfCache.put(operandString, result);
+        }
+        return result;
+    }
+
+
+    protected Map<DateTime, BigDecimal> getMultidimensionalBillFactorIntervalValues(String operandString) {
+        Map<DateTime, BigDecimal> result = intervalMDBFCache.get(operandString);
+        if (result == null) {
+            BigDecimal integralValue = null;
+            MultidimensionalBillFactorValueParameters multidimensionalBillFactorValueParameters = getMultidimensionalBillFactorValueParameters(
+                    operandString);
+            CmMultidimensionalBillFactorInstance instance = multidimensionalBillFactorValueParameters.billFactor.getInstance(
+                    contextObject
+                    , getEffectiveDate(multidimensionalBillFactorValueParameters.billFactor)
+                    , multidimensionalBillFactorValueParameters.listDefaultValues
+            );
+            if (!isNull(instance)) {
+                if (multidimensionalBillFactorValueParameters.billFactor.isIntervalType()) {
+                    result = instance.getIntervalValueSetValues();
+                } else {
+                    integralValue = instance.getEffectiveBillFactorValue(effectiveDate);
+                }
+            }
+            if (result == null) {
+                if (integralValue == null) {
+                    integralValue = multidimensionalBillFactorValueParameters.defaultValue;
+                }
+                if (integralValue != null) {
+                    result = IntervalDataHelper.getInstance().copyEachDay(period, integralValue);
+                }
+            }
+            intervalMDBFCache.put(operandString, result);
+        }
+        return result;
+    }
+
+
+    protected MultidimensionalBillFactorValueParameters getMultidimensionalBillFactorValueParameters(String operandString) {
+        MultidimensionalBillFactorValueParameters result = new MultidimensionalBillFactorValueParameters();
+        String code = operandString.replace("MDBF[", "").replace("]", "");
+        String[] arguments = code.split(";");
+        CmMultidimensionalBillFactor bf = new CmMultidimensionalBillFactor_Id(arguments[0]).getEntity();
+        if (bf == null) {
+            addError(CmSystemMessageRepository.error(String.format("МФР %s не существует %s", arguments[0], operandString)));
+        }
+        Map<BigInteger, String> defaultValues = new HashMap<>();
+        BigDecimal defaultValue = null;
+        for (int i = 1; i < arguments.length; i++) {
+            String mapEntry = arguments[i];
+            String[] mapEntryPart = mapEntry.split(":");
+            if (mapEntryPart.length != 2) {
+                if (mapEntryPart.length == 1) {
+                    defaultValue = Formatter.parseBigDecimal(mapEntryPart[0]);
+                } else {
+                    addError(CmSystemMessageRepository.error(String.format("Неверное кол-во параметров в значениях по-умолчанию %s", operandString)));
+                }
+            } else {
+                BigInteger defaultValueIndex = Formatter.parseBigInteger(mapEntryPart[0]);
+                defaultValues.put(defaultValueIndex, mapEntryPart[1]);
+            }
+        }
+        result.billFactor = bf;
+        result.defaultValues = defaultValues;
+        result.defaultValue = defaultValue;
+
+        return result;
+    }
+
+    protected BigDecimal getSQI(String operandString) {
+        if (billSegmentServiceQuantityDataList == null) {
+            addError(CmSystemMessageRepository.error(String.format("Использование SQI недопустимо")));
+        }
+        BigDecimal result = null;
+
+        String code = operandString.replace("SQI[", "").replace("]", "");
+        String[] arguments = code.split(";");
+
+        TimeOfUse_Id touId = TimeOfUse_Id.NULL;
+        UnitOfMeasure_Id uomId = UnitOfMeasure_Id.NULL;
+        ServiceQuantityIdentifier_Id sqiId = ServiceQuantityIdentifier_Id.NULL;
+        BigDecimal defaultValue = null;
+        String mode = "INIT";
+
+        for (int i = 0; i < arguments.length; i++) {
+            String argument = arguments[i];
+            if (i == 0) {
+                mode = argument.trim().toUpperCase();
+                if (mode.equals("INIT") && mode.equals("BILL")) {
+                    addError(CmSystemMessageRepository.error(String.format("Недопустимый режим %s в %s", mode, operandString)));
+                }
+            } else if (i == 1) {
+                sqiId = ("THIS".equals(argument)) ? serviceQuantityIdentifierId : new ServiceQuantityIdentifier_Id(argument);
+            } else if (i == 2) {
+                uomId = ("THIS".equals(argument)) ? unitOfMeasureId : new UnitOfMeasure_Id(argument);
+            } else if (i == 3) {
+                touId = ("THIS".equals(argument)) ? timeOfUseId : new TimeOfUse_Id(argument);
+            } else if (i == 4) {
+                if (notBlank(argument)) {
+                    defaultValue = Formatter.parseBigDecimal(argument);
+                }
+            }
+        }
+        for (BillSegmentServiceQuantityData billSegmentServiceQuantityData : billSegmentServiceQuantityDataList) {
+            BillSegmentServiceQuantity_DTO dto = billSegmentServiceQuantityData.getBillSegmentServiceQuantityDto();
+            BillSegmentServiceQuantity_Id id = dto.getId();
+            if (touId.equals(id.getTimeOfUseId()) && uomId.equals(id.getUnitOfMeasureId()) && sqiId.equals(id.getServiceQuantityIdentifierId())) {
+                if ("INIT".equals(mode)) {
+                    result = dto.getInitialServiceQuantity();
+                } else if ("BILL".equals(mode)) {
+                    result = dto.getBillableServiceQuantity();
+                }
+                break;
+            }
+        }
+        if (result == null) {
+            result = defaultValue;
+        }
+
+        return result;
+    }
+
+
+    protected Map<DateTime, BigDecimal> getIntervalData(String operandString) {
+        Map<DateTime, BigDecimal> result = null;
+        String code = operandString.replace("INTV[", "").replace("]", "");
+
+
+        IntervalDataProfile intervalDataProfileFacade = getIntervalDataProfile(contextObject, new Period_Id(effectiveDate), new IntervalProfileType_Id(code));
+        if (intervalDataProfileFacade != null) {
+            IntervalDataSet intervalDataSetFacade = intervalDataProfileFacade.getEligibleForBillingEffectiveDataSet();
+            if (intervalDataSetFacade != null) {
+                result = intervalDataSetFacade.getDataMap();
+            }
+        }
+
+        return result;
+    }
+
+
+    protected String getCharacteristicData(String operandString) {
+        if (characteristicDataList == null) {
+            addError(CmSystemMessageRepository.error(String.format("Использование CHAR_DATA недопустимо")));
+        }
+        String result = null;
+
+        String code = operandString.replace("CHAR_DATA[", "").replace("]", "");
+        String[] arguments = code.split(";");
+        CharacteristicType_Id characteristicTypeId = CharacteristicType_Id.NULL;
+        String defaultValue = null;
+
+        for (int i = 0; i < arguments.length; i++) {
+            String argument = arguments[i];
+            if (i == 0) {
+                characteristicTypeId = new CharacteristicType_Id(argument);
+            } else if (i == 1) {
+                if (notBlank(argument)) {
+                    defaultValue = argument;
+                }
+            }
+        }
+
+        for (CharacteristicData d : characteristicDataList) {
+            if (d.getCharacteristicType().getId().equals(characteristicTypeId)) {
+                result = d.getAdhocCharacteristicValue();
+                if (isBlank(result)) {
+                    result = d.getCharacteristicValue();
+                }
+                break;
+            }
+        }
+
+        if (result == null) {
+            result = defaultValue;
+        }
+
+        return result;
+    }
+
+    protected Object ifThenElse(String operandString) {
+        Object result = null;
+        List<String> parts = Lexer.processIfThenElse(operandString);
+
+        Bool value = (Bool) SAPropertyCalculator.evaluate(parts.get(0), this);
+
+        if (value.asJavaBoolean()) {
+            result = SAPropertyCalculator.evaluate(parts.get(1), this);
+        } else {
+            result = SAPropertyCalculator.evaluate(parts.get(2), this);
+        }
+        return result;
+    }
+
+    protected void processError(String operandString) {
+        String message = operandString.substring(6, operandString.length() - 1);
+        addError(CmSystemMessageRepository.error(message));
+    }
+
+
+    //</editor-fold>
+
+    private class MultidimensionalBillFactorValueParameters {
+        public CmMultidimensionalBillFactor billFactor;
+        public Map<BigInteger, String> defaultValues = new HashMap<>();
+        public List<DimensionDefaultValue> listDefaultValues = new ArrayList<>();
+        public BigDecimal defaultValue;
+    }
+
+
+    abstract protected String getContextObjectProperty(String operandString);
+
+    abstract protected IntervalDataProfile getIntervalDataProfile(T contextObject, Period_Id periodId, IntervalProfileType_Id intervalProfileTypeId);
+}

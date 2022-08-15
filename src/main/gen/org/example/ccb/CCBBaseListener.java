@@ -114,37 +114,13 @@ public class CCBBaseListener implements CCBListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterParExpr(CCBParser.ParExprContext ctx) { }
+	@Override public void enterNumberAtom(CCBParser.NumberAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitParExpr(CCBParser.ParExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterIntegerAtom(CCBParser.IntegerAtomContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitIntegerAtom(CCBParser.IntegerAtomContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterFloatAtom(CCBParser.FloatAtomContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitFloatAtom(CCBParser.FloatAtomContext ctx) { }
+	@Override public void exitNumberAtom(CCBParser.NumberAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -162,13 +138,25 @@ public class CCBBaseListener implements CCBListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdAtom(CCBParser.IdAtomContext ctx) { }
+	@Override public void enterContextObjectAtom(CCBParser.ContextObjectAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIdAtom(CCBParser.IdAtomContext ctx) { }
+	@Override public void exitContextObjectAtom(CCBParser.ContextObjectAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMdbfAtom(CCBParser.MdbfAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMdbfAtom(CCBParser.MdbfAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

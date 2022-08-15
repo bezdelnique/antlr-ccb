@@ -63,26 +63,12 @@ public interface CCBVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitEqualityExpr(CCBParser.EqualityExprContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code parExpr}
+	 * Visit a parse tree produced by the {@code numberAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitParExpr(CCBParser.ParExprContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code integerAtom}
-	 * labeled alternative in {@link CCBParser#atom}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIntegerAtom(CCBParser.IntegerAtomContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code floatAtom}
-	 * labeled alternative in {@link CCBParser#atom}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFloatAtom(CCBParser.FloatAtomContext ctx);
+	T visitNumberAtom(CCBParser.NumberAtomContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code booleanAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
@@ -91,12 +77,19 @@ public interface CCBVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitBooleanAtom(CCBParser.BooleanAtomContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code idAtom}
+	 * Visit a parse tree produced by the {@code contextObjectAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitIdAtom(CCBParser.IdAtomContext ctx);
+	T visitContextObjectAtom(CCBParser.ContextObjectAtomContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code mdbfAtom}
+	 * labeled alternative in {@link CCBParser#atom}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMdbfAtom(CCBParser.MdbfAtomContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code stringAtom}
 	 * labeled alternative in {@link CCBParser#atom}.
