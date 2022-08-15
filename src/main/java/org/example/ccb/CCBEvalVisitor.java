@@ -1,6 +1,13 @@
 package org.example.ccb;
 
 public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
+    private final CCBDatasource ccbDatasource;
+
+    public CCBEvalVisitor(CCBDatasource ccbDatasource) {
+        super();
+        this.ccbDatasource = ccbDatasource;
+    }
+
     @Override
     public ValueHolder visitParse(CCBParser.ParseContext ctx) {
         return super.visitParse(ctx);
@@ -75,12 +82,15 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
     }
 
     @Override
-    public ValueHolder visitIdAtom(CCBParser.IdAtomContext ctx) {
-        return super.visitIdAtom(ctx);
+    public ValueHolder visitContextObjectAtom(CCBParser.ContextObjectAtomContext ctx) {
+        return super.visitContextObjectAtom(ctx);
     }
 
     @Override
     public ValueHolder visitStringAtom(CCBParser.StringAtomContext ctx) {
-        return super.visitStringAtom(ctx);
+        String value = ctx.getText();
+        value = value.replaceAll("^\"|\"$", "");
+        value = value.replaceAll("^\'|\'$", "");
+        return new ValueHolder(value);
     }
 }

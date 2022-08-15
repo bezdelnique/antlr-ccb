@@ -50,7 +50,7 @@ atom
  | INT                                  #integerAtom
  | FLOAT                                #floatAtom
  | (TRUE | FALSE)                       #booleanAtom
- | ID                                   #idAtom
+ | CO                                   #contextObjectAtom
  | STRING                               #stringAtom
  ;
 
@@ -89,8 +89,14 @@ ELSE : 'else' | 'ELSE';
 // WHILE : 'while';
 // LOG : 'log';
 
-ID
- : [a-zA-Z_] [a-zA-Z_0-9]*
+//ID
+// : [a-zA-Z_] [a-zA-Z_0-9]*
+// ;
+
+CO
+ // : [a-zA-Z_] [a-zA-Z_0-9]*
+ // SA[EO:EO-TYPE]
+ : 'SA[' [A-Z-]* ':' [A-Z-]* ']'
  ;
 
 INT
@@ -104,6 +110,7 @@ FLOAT
 
 STRING
  : '"' (~["\r\n] | '""')* '"'
+ | '\'' (~["\r\n] | '\'''\'' )* '\''
  ;
 
 COMMENT
