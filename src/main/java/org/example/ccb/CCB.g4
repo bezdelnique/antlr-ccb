@@ -29,20 +29,21 @@ if_stat
  ;
 
 condition_block
- : OSRACE expr CSRACE
- // | expr stat_block
+ : OSBRACE expr CSBRACE
+ | expr
  ;
 
 stat_block
- : OSRACE expr CSRACE
+ : OSBRACE expr CSBRACE
  | expr
-// | stat
  ;
 
 expr
- : expr op=(GT | LT | GTEQ | LTEQ | EQ | NEQ) expr      #compareExpr
- | atom                                 #atomExpr
-// | atom
+ : OPAR expr CPAR                                       #compareParenthesisExpr
+ | NOT OPAR expr CPAR                                   #notExpr
+ | expr op=(GT | LT | GTEQ | LTEQ | EQ | NEQ) expr      #compareExpr
+ | expr op=(OR | AND) expr                              #logicalExpr
+ | atom                                                 #atomExpr
  ;
 
 
@@ -55,15 +56,15 @@ atom
  ;
 
 
-//OR : '||';
-//AND : '&&';
+OR : '||';
+AND : '&&';
 EQ : '=';
 NEQ : ('!=' | '<>');
 GT : '>';
 LT : '<';
 GTEQ : '>=';
 LTEQ : '<=';
-NOT : ('!' | 'NOT');
+NOT : ('!' | 'NOT' | 'not');
 //PLUS : '+';
 //MINUS : '-';
 //MULT : '*';
@@ -75,10 +76,10 @@ NOT : ('!' | 'NOT');
 // ASSIGN : ':=';
 OPAR : '(';
 CPAR : ')';
-OBRACE : '{';
-CBRACE : '}';
-OSRACE : '[';
-CSRACE : ']';
+//OBRACE : '{';
+//CBRACE : '}';
+OSBRACE : '[';
+CSBRACE : ']';
 
 TRUE : 'true' | 'TRUE' ;
 FALSE : 'false' | 'FALSE';

@@ -59,30 +59,29 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
                     right.getClass().getName()));
         }
 
-        Boolean result = null;
-        switch (ctx.op.getType()) {
-            case CCBParser.EQ:
-                result = left.equals(right);
-                break;
-            case CCBParser.NEQ:
-                result = !left.equals(right);
-                break;
-            case CCBParser.GT:
-                result = left.compareTo(right) > 0;
-                break;
-            case CCBParser.GTEQ:
-                result = left.compareTo(right) >= 0;
-                break;
-            case CCBParser.LT:
-                result = left.compareTo(right) < 0;
-                break;
-            case CCBParser.LTEQ:
-                result = left.compareTo(right) <= 0;
-                break;
-            default:
-                throw new RuntimeException("Unhandled operator");
+        Boolean result = switch (ctx.op.getType()) {
+            case CCBParser.EQ -> left.equals(right);
+            case CCBParser.NEQ -> !left.equals(right);
+            case CCBParser.GT -> left.compareTo(right) > 0;
+            case CCBParser.GTEQ -> left.compareTo(right) >= 0;
+            case CCBParser.LT -> left.compareTo(right) < 0;
+            case CCBParser.LTEQ -> left.compareTo(right) <= 0;
+            default -> throw new RuntimeException("Unhandled operator");
+        };
 
-        }
+        return new ValueHolder(result);
+    }
+
+    @Override
+    public ValueHolder visitLogicalExpr(CCBParser.LogicalExprContext ctx) {
+        ValueHolder left = this.visit(ctx.expr(0));
+        ValueHolder right = this.visit(ctx.expr(1));
+
+        Boolean result = switch (ctx.op.getType()) {
+            case CCBParser.OR -> left.asBoolean() || right.asBoolean();
+            case CCBParser.AND -> left.asBoolean() && right.asBoolean();
+            default -> throw new RuntimeException("Unhandled operator");
+        };
 
         return new ValueHolder(result);
     }
@@ -122,5 +121,19 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
         value = value.replaceAll("^\"|\"$", "");
         value = value.replaceAll("^\'|\'$", "");
         return new ValueHolder(value);
+    }
+
+    @Override
+    public ValueHolder visitCompareParenthesisExpr(CCBParser.CompareParenthesisExprContext ctx) {
+        return visit(ctx.expr());
+    }
+
+    @Override
+    public ValueHolder visitNotExpr(CCBParser.NotExprContext ctx) {
+        ValueHolder visit = visit(ctx.expr());
+        if (!visit.isBoolean()) {
+            throw new RuntimeException("Only boolean type supports negation");
+        }
+        return new ValueHolder(!visit.asBoolean());
     }
 }
