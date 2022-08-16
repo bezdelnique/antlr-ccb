@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class CcbCalculatorOperatorNumberTest extends BaseCcbCalculatorTest {
+public class CcbCalculatorComparatorNumberTest extends BaseCcbCalculatorTest {
     @Test
     void whenTwoNumbersNotEqualsThanFalse() {
         ValueHolder result = evaluate("if[1=2]then[true]else[false]");

@@ -40,10 +40,11 @@ stat_block
  ;
 
 expr
- : expr op=(EQ | NEQ) expr              #equalityExpr
+ : expr op=(GT | LT | GTEQ | LTEQ | EQ | NEQ) expr      #compareExpr
  | atom                                 #atomExpr
 // | atom
  ;
+
 
 atom
  : (INT | FLOAT)                        #numberAtom
@@ -57,18 +58,18 @@ atom
 //OR : '||';
 //AND : '&&';
 EQ : '=';
-NEQ : '!=';
-//GT : '>';
-//LT : '<';
-//GTEQ : '>=';
-//LTEQ : '<=';
+NEQ : ('!=' | '<>');
+GT : '>';
+LT : '<';
+GTEQ : '>=';
+LTEQ : '<=';
+NOT : ('!' | 'NOT');
 //PLUS : '+';
 //MINUS : '-';
 //MULT : '*';
 //DIV : '/';
 //MOD : '%';
 //POW : '^';
-NOT : '!';
 
 // SCOL : ';';
 // ASSIGN : ':=';
@@ -81,7 +82,7 @@ CSRACE : ']';
 
 TRUE : 'true' | 'TRUE' ;
 FALSE : 'false' | 'FALSE';
-NIL : 'nil';
+// NIL : 'nil';
 IF : 'if' | 'IF';
 THEN : 'then' | 'THEN';
 ELSE : 'else' | 'ELSE';
@@ -113,7 +114,7 @@ FLOAT
 
 STRING
  : '"' (~["\r\n] | '""')* '"'
- | '\'' (~["\r\n] | '\'''\'' )* '\''
+ | '\'' (~['\r\n] | '\'''\'' )* '\''
  ;
 
 COMMENT

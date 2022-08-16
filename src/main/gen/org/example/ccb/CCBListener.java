@@ -82,17 +82,17 @@ public interface CCBListener extends ParseTreeListener {
 	 */
 	void exitAtomExpr(CCBParser.AtomExprContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code equalityExpr}
+	 * Enter a parse tree produced by the {@code compareExpr}
 	 * labeled alternative in {@link CCBParser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void enterEqualityExpr(CCBParser.EqualityExprContext ctx);
+	void enterCompareExpr(CCBParser.CompareExprContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code equalityExpr}
+	 * Exit a parse tree produced by the {@code compareExpr}
 	 * labeled alternative in {@link CCBParser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void exitEqualityExpr(CCBParser.EqualityExprContext ctx);
+	void exitCompareExpr(CCBParser.CompareExprContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code numberAtom}
 	 * labeled alternative in {@link CCBParser#atom}.

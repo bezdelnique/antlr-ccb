@@ -46,8 +46,9 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
         return super.visitAtomExpr(ctx);
     }
 
+
     @Override
-    public ValueHolder visitEqualityExpr(CCBParser.EqualityExprContext ctx) {
+    public ValueHolder visitCompareExpr(CCBParser.CompareExprContext ctx) {
         ValueHolder left = this.visit(ctx.expr(0));
         ValueHolder right = this.visit(ctx.expr(1));
 
@@ -58,7 +59,32 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
                     right.getClass().getName()));
         }
 
-        return new ValueHolder(left.equals(right));
+        Boolean result = null;
+        switch (ctx.op.getType()) {
+            case CCBParser.EQ:
+                result = left.equals(right);
+                break;
+            case CCBParser.NEQ:
+                result = !left.equals(right);
+                break;
+            case CCBParser.GT:
+                result = left.compareTo(right) > 0;
+                break;
+            case CCBParser.GTEQ:
+                result = left.compareTo(right) >= 0;
+                break;
+            case CCBParser.LT:
+                result = left.compareTo(right) < 0;
+                break;
+            case CCBParser.LTEQ:
+                result = left.compareTo(right) <= 0;
+                break;
+            default:
+                throw new RuntimeException("Unhandled operator");
+
+        }
+
+        return new ValueHolder(result);
     }
 
 

@@ -102,13 +102,13 @@ public class CCBBaseListener implements CCBListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEqualityExpr(CCBParser.EqualityExprContext ctx) { }
+	@Override public void enterCompareExpr(CCBParser.CompareExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEqualityExpr(CCBParser.EqualityExprContext ctx) { }
+	@Override public void exitCompareExpr(CCBParser.CompareExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

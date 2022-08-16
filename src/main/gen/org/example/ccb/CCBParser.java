@@ -19,9 +19,9 @@ public class CCBParser extends Parser {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		EQ=1, NEQ=2, NOT=3, OPAR=4, CPAR=5, OBRACE=6, CBRACE=7, OSRACE=8, CSRACE=9, 
-		TRUE=10, FALSE=11, NIL=12, IF=13, THEN=14, ELSE=15, CO=16, MDBF=17, INT=18, 
-		FLOAT=19, STRING=20, COMMENT=21, SPACE=22, OTHER=23;
+		EQ=1, NEQ=2, GT=3, LT=4, GTEQ=5, LTEQ=6, NOT=7, OPAR=8, CPAR=9, OBRACE=10, 
+		CBRACE=11, OSRACE=12, CSRACE=13, TRUE=14, FALSE=15, IF=16, THEN=17, ELSE=18, 
+		CO=19, MDBF=20, INT=21, FLOAT=22, STRING=23, COMMENT=24, SPACE=25, OTHER=26;
 	public static final int
 		RULE_parse = 0, RULE_block = 1, RULE_stat = 2, RULE_if_stat = 3, RULE_condition_block = 4, 
 		RULE_stat_block = 5, RULE_expr = 6, RULE_atom = 7;
@@ -35,16 +35,16 @@ public class CCBParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "'='", "'!='", "'!'", "'('", "')'", "'{'", "'}'", "'['", "']'", 
-			null, null, "'nil'"
+			null, "'='", null, "'>'", "'<'", "'>='", "'<='", null, "'('", "')'", 
+			"'{'", "'}'", "'['", "']'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, "EQ", "NEQ", "NOT", "OPAR", "CPAR", "OBRACE", "CBRACE", "OSRACE", 
-			"CSRACE", "TRUE", "FALSE", "NIL", "IF", "THEN", "ELSE", "CO", "MDBF", 
-			"INT", "FLOAT", "STRING", "COMMENT", "SPACE", "OTHER"
+			null, "EQ", "NEQ", "GT", "LT", "GTEQ", "LTEQ", "NOT", "OPAR", "CPAR", 
+			"OBRACE", "CBRACE", "OSRACE", "CSRACE", "TRUE", "FALSE", "IF", "THEN", 
+			"ELSE", "CO", "MDBF", "INT", "FLOAT", "STRING", "COMMENT", "SPACE", "OTHER"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -464,7 +464,7 @@ public class CCBParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
-	public static class EqualityExprContext extends ExprContext {
+	public static class CompareExprContext extends ExprContext {
 		public Token op;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
@@ -472,20 +472,24 @@ public class CCBParser extends Parser {
 		public ExprContext expr(int i) {
 			return getRuleContext(ExprContext.class,i);
 		}
+		public TerminalNode GT() { return getToken(CCBParser.GT, 0); }
+		public TerminalNode LT() { return getToken(CCBParser.LT, 0); }
+		public TerminalNode GTEQ() { return getToken(CCBParser.GTEQ, 0); }
+		public TerminalNode LTEQ() { return getToken(CCBParser.LTEQ, 0); }
 		public TerminalNode EQ() { return getToken(CCBParser.EQ, 0); }
 		public TerminalNode NEQ() { return getToken(CCBParser.NEQ, 0); }
-		public EqualityExprContext(ExprContext ctx) { copyFrom(ctx); }
+		public CompareExprContext(ExprContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterEqualityExpr(this);
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).enterCompareExpr(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitEqualityExpr(this);
+			if ( listener instanceof CCBListener ) ((CCBListener)listener).exitCompareExpr(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitEqualityExpr(this);
+			if ( visitor instanceof CCBVisitor ) return ((CCBVisitor<? extends T>)visitor).visitCompareExpr(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -524,15 +528,15 @@ public class CCBParser extends Parser {
 					_prevctx = _localctx;
 					{
 					{
-					_localctx = new EqualityExprContext(new ExprContext(_parentctx, _parentState));
+					_localctx = new CompareExprContext(new ExprContext(_parentctx, _parentState));
 					pushNewRecursionContext(_localctx, _startState, RULE_expr);
 					setState(48);
 					if (!(precpred(_ctx, 2))) throw new FailedPredicateException(this, "precpred(_ctx, 2)");
 					setState(49);
-					((EqualityExprContext)_localctx).op = _input.LT(1);
+					((CompareExprContext)_localctx).op = _input.LT(1);
 					_la = _input.LA(1);
-					if ( !(_la==EQ || _la==NEQ) ) {
-						((EqualityExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+					if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << EQ) | (1L << NEQ) | (1L << GT) | (1L << LT) | (1L << GTEQ) | (1L << LTEQ))) != 0)) ) {
+						((CompareExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 					}
 					else {
 						if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
@@ -757,7 +761,7 @@ public class CCBParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u0017@\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001\u001a@\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0002"+
 		"\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007\u0001"+
 		"\u0000\u0001\u0000\u0001\u0001\u0005\u0001\u0014\b\u0001\n\u0001\f\u0001"+
@@ -768,8 +772,8 @@ public class CCBParser extends Parser {
 		"\u0001\u0006\u0001\u0006\u0001\u0006\u0001\u0006\u0005\u00064\b\u0006"+
 		"\n\u0006\f\u00067\t\u0006\u0001\u0007\u0001\u0007\u0001\u0007\u0001\u0007"+
 		"\u0001\u0007\u0003\u0007>\b\u0007\u0001\u0007\u0000\u0001\f\b\u0000\u0002"+
-		"\u0004\u0006\b\n\f\u000e\u0000\u0003\u0001\u0000\u0001\u0002\u0001\u0000"+
-		"\u0012\u0013\u0001\u0000\n\u000b>\u0000\u0010\u0001\u0000\u0000\u0000"+
+		"\u0004\u0006\b\n\f\u000e\u0000\u0003\u0001\u0000\u0001\u0006\u0001\u0000"+
+		"\u0015\u0016\u0001\u0000\u000e\u000f>\u0000\u0010\u0001\u0000\u0000\u0000"+
 		"\u0002\u0015\u0001\u0000\u0000\u0000\u0004\u0018\u0001\u0000\u0000\u0000"+
 		"\u0006\u001a\u0001\u0000\u0000\u0000\b\"\u0001\u0000\u0000\u0000\n+\u0001"+
 		"\u0000\u0000\u0000\f-\u0001\u0000\u0000\u0000\u000e=\u0001\u0000\u0000"+
@@ -778,21 +782,21 @@ public class CCBParser extends Parser {
 		"\u0000\u0014\u0017\u0001\u0000\u0000\u0000\u0015\u0013\u0001\u0000\u0000"+
 		"\u0000\u0015\u0016\u0001\u0000\u0000\u0000\u0016\u0003\u0001\u0000\u0000"+
 		"\u0000\u0017\u0015\u0001\u0000\u0000\u0000\u0018\u0019\u0003\u0006\u0003"+
-		"\u0000\u0019\u0005\u0001\u0000\u0000\u0000\u001a\u001b\u0005\r\u0000\u0000"+
-		"\u001b\u001c\u0003\b\u0004\u0000\u001c\u001d\u0005\u000e\u0000\u0000\u001d"+
-		"\u001e\u0003\n\u0005\u0000\u001e\u001f\u0001\u0000\u0000\u0000\u001f "+
-		"\u0005\u000f\u0000\u0000 !\u0003\n\u0005\u0000!\u0007\u0001\u0000\u0000"+
-		"\u0000\"#\u0005\b\u0000\u0000#$\u0003\f\u0006\u0000$%\u0005\t\u0000\u0000"+
-		"%\t\u0001\u0000\u0000\u0000&\'\u0005\b\u0000\u0000\'(\u0003\f\u0006\u0000"+
-		"()\u0005\t\u0000\u0000),\u0001\u0000\u0000\u0000*,\u0003\f\u0006\u0000"+
+		"\u0000\u0019\u0005\u0001\u0000\u0000\u0000\u001a\u001b\u0005\u0010\u0000"+
+		"\u0000\u001b\u001c\u0003\b\u0004\u0000\u001c\u001d\u0005\u0011\u0000\u0000"+
+		"\u001d\u001e\u0003\n\u0005\u0000\u001e\u001f\u0001\u0000\u0000\u0000\u001f"+
+		" \u0005\u0012\u0000\u0000 !\u0003\n\u0005\u0000!\u0007\u0001\u0000\u0000"+
+		"\u0000\"#\u0005\f\u0000\u0000#$\u0003\f\u0006\u0000$%\u0005\r\u0000\u0000"+
+		"%\t\u0001\u0000\u0000\u0000&\'\u0005\f\u0000\u0000\'(\u0003\f\u0006\u0000"+
+		"()\u0005\r\u0000\u0000),\u0001\u0000\u0000\u0000*,\u0003\f\u0006\u0000"+
 		"+&\u0001\u0000\u0000\u0000+*\u0001\u0000\u0000\u0000,\u000b\u0001\u0000"+
 		"\u0000\u0000-.\u0006\u0006\uffff\uffff\u0000./\u0003\u000e\u0007\u0000"+
 		"/5\u0001\u0000\u0000\u000001\n\u0002\u0000\u000012\u0007\u0000\u0000\u0000"+
 		"24\u0003\f\u0006\u000330\u0001\u0000\u0000\u000047\u0001\u0000\u0000\u0000"+
 		"53\u0001\u0000\u0000\u000056\u0001\u0000\u0000\u00006\r\u0001\u0000\u0000"+
 		"\u000075\u0001\u0000\u0000\u00008>\u0007\u0001\u0000\u00009>\u0007\u0002"+
-		"\u0000\u0000:>\u0005\u0010\u0000\u0000;>\u0005\u0011\u0000\u0000<>\u0005"+
-		"\u0014\u0000\u0000=8\u0001\u0000\u0000\u0000=9\u0001\u0000\u0000\u0000"+
+		"\u0000\u0000:>\u0005\u0013\u0000\u0000;>\u0005\u0014\u0000\u0000<>\u0005"+
+		"\u0017\u0000\u0000=8\u0001\u0000\u0000\u0000=9\u0001\u0000\u0000\u0000"+
 		"=:\u0001\u0000\u0000\u0000=;\u0001\u0000\u0000\u0000=<\u0001\u0000\u0000"+
 		"\u0000>\u000f\u0001\u0000\u0000\u0000\u0004\u0015+5=";
 	public static final ATN _ATN =

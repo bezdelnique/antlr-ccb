@@ -56,12 +56,12 @@ public interface CCBVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitAtomExpr(CCBParser.AtomExprContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code equalityExpr}
+	 * Visit a parse tree produced by the {@code compareExpr}
 	 * labeled alternative in {@link CCBParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitEqualityExpr(CCBParser.EqualityExprContext ctx);
+	T visitCompareExpr(CCBParser.CompareExprContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code numberAtom}
 	 * labeled alternative in {@link CCBParser#atom}.

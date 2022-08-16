@@ -68,7 +68,7 @@ public class CCBBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CC
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitEqualityExpr(CCBParser.EqualityExprContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCompareExpr(CCBParser.CompareExprContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
