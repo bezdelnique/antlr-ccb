@@ -1,6 +1,9 @@
 package org.example.ccb;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
     private final CCBDatasource ccbDatasource;
@@ -135,5 +138,19 @@ public class CCBEvalVisitor extends CCBBaseVisitor<ValueHolder> {
             throw new RuntimeException("Only boolean type supports negation");
         }
         return new ValueHolder(!visit.asBoolean());
+    }
+
+    @Override
+    public ValueHolder visitOperatorIn(CCBParser.OperatorInContext ctx) {
+        List<CCBParser.ExprContext> exprs = ctx.expr();
+
+        ValueHolder left = visit(exprs.get(0));
+        Set<ValueHolder> right = new HashSet<>();
+
+        for (int i = 1; i < exprs.size(); i++) {
+            right.add(visit(exprs.get(i)));
+        }
+
+        return new ValueHolder(right.contains(left));
     }
 }

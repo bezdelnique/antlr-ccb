@@ -15,6 +15,7 @@ block
 
 stat
  : if_stat
+ | return
 // : assignment
 // | OTHER {System.err.println("unknown char: " + $OTHER.text);}
  ;
@@ -25,7 +26,6 @@ stat
 
 if_stat
  : IF condition_block (THEN stat_block) (ELSE stat_block)
- // | IF condition_block (ELSE IF condition_block)* (ELSE stat_block)?
  ;
 
 condition_block
@@ -38,11 +38,16 @@ stat_block
  | expr
  ;
 
+return
+ : RETURN stat_block
+ ;
+
 expr
  : OPAR expr CPAR                                       #compareParenthesisExpr
  | NOT OPAR expr CPAR                                   #notExpr
  | expr op=(GT | LT | GTEQ | LTEQ | EQ | NEQ) expr      #compareExpr
  | expr op=(OR | AND) expr                              #logicalExpr
+ | expr IN OPAR expr (',' expr)* CPAR                   #operatorIn
  | atom                                                 #atomExpr
  ;
 
@@ -83,10 +88,13 @@ CSBRACE : ']';
 
 TRUE : 'true' | 'TRUE' ;
 FALSE : 'false' | 'FALSE';
+
 // NIL : 'nil';
 IF : 'if' | 'IF';
 THEN : 'then' | 'THEN';
 ELSE : 'else' | 'ELSE';
+RETURN : 'return' | 'RETURN';
+IN : 'IN' | 'in';
 // WHILE : 'while';
 // LOG : 'log';
 
